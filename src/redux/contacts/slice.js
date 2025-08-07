@@ -1,6 +1,11 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
-import { addContact, deleteContact, fetchContacts } from "./contactsOps";
-import { selectNameFilter } from "./filtersSlice";
+import { createSlice } from "@reduxjs/toolkit";
+import {
+  addContact,
+  deleteContact,
+  editContact,
+  fetchContacts,
+} from "./operations";
+import { logOutThunk } from "../auth/operations";
 
 const initialState = {
   items: [],
@@ -17,7 +22,7 @@ const slice = createSlice({
         state.items = action.payload;
         state.loading = false;
       })
-      .addCase(fetchContacts.pending, (state, action) => {
+      .addCase(fetchContacts.pending, (state) => {
         state.loading = true;
       })
       .addCase(fetchContacts.rejected, (state, action) => {
@@ -28,38 +33,33 @@ const slice = createSlice({
         state.items.push(action.payload);
         state.loading = false;
       })
-      .addCase(addContact.pending, (state, action) => {
+      .addCase(addContact.pending, (state) => {
         state.loading = true;
       })
       .addCase(addContact.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(logOutThunk.fulfilled, (state) => {
+        state.items = [];
+      })
       .addCase(deleteContact.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item.id !== action.payload);
         state.loading = false;
       })
-      .addCase(deleteContact.pending, (state, action) => {
+      .addCase(deleteContact.pending, (state) => {
         state.loading = true;
       })
       .addCase(deleteContact.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(editContact.fulfilled, (state, action) => {
+        state.items = state.items.map((item) =>
+          item.id === action.payload.id ? { ...item, ...action.payload } : item
+        );
       });
   },
 });
-
-export const selectContacts = (state) => state.contacts.items;
-export const selectLoading = (state) => state.contacts.loading;
-export const selectError = (state) => state.contacts.error;
-
-export const selectFilteredContacts = createSelector(
-  [selectContacts, selectNameFilter],
-  (contacts, filter) => {
-    return contacts.filter((contact) =>
-      contact.name.toLowerCase().includes(filter.toLowerCase())
-    );
-  }
-);
 
 export const contactsReducer = slice.reducer;
